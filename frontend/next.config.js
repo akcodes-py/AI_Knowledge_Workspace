@@ -1,3 +1,16 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = { async rewrites() { return [{ source: "/api/:path*", destination: "http://localhost:8001/:path*" }]; } };
+const nextConfig = {
+  output: "standalone",
+  async rewrites() {
+    const backendUrl = process.env.BACKEND_URL || "http://localhost:8001";
+    return [
+      {
+        source: "/api/:path*",
+        destination: `${backendUrl}/:path*`,
+      },
+    ];
+  },
+};
+
 module.exports = nextConfig;
+

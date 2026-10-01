@@ -11,7 +11,8 @@ load_dotenv()
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 GEMINI_MODEL   = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
-_FALLBACKS     = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-flash-8b"]
+_FALLBACKS     = ["gemini-2.0-flash", "gemini-1.5-flash"]
+
 
 # Compact, fast system prompt (minimise tokens)
 SYSTEM = (
