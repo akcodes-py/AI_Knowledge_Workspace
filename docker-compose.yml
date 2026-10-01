@@ -1,6 +1,5 @@
-version: '3.8'
-
 services:
+
   postgres:
     image: pgvector/pgvector:pg16
     container_name: ai_workspace_postgres

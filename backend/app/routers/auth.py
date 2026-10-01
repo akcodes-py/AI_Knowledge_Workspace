@@ -11,6 +11,8 @@ import httpx
 from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse, JSONResponse
+from pydantic import BaseModel
+
 from jose import jwt, JWTError
 from dotenv import load_dotenv
 from app.db.client import get_conn
