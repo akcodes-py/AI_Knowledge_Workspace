@@ -1,0 +1,65 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.Python
+*.egg-info/
+dist/
+build/
+venv/
+.venv/
+env/
+*.pyc
+
+# Environment files (NEVER commit secrets)
+backend/.env
+.env
+.env.local
+.env.production
+.env.*.local
+
+# Node / Next.js
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/.env.local
+
+# Logs
+*.log
+server.log
+server.log.err
+*.log.err
+
+# Storage / uploads (large binary data)
+storage/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Python virtual envs
+.venv/
+venv/
+ENV/
+
+# Compiled assets
+*.pyc
+*.pyo
+*.pyd
+
+# Test / coverage
+.coverage
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+
+# Temp files
+*.tmp
+tmp/
