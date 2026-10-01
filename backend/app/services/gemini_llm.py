@@ -10,8 +10,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-GEMINI_MODEL   = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
-_FALLBACKS     = ["gemini-2.0-flash", "gemini-1.5-flash"]
+GEMINI_MODEL   = os.getenv("GEMINI_MODEL", "gemini-flash-lite-latest")
+_FALLBACKS     = ["gemini-flash-lite-latest", "gemini-3-flash-preview", "gemini-3.1-flash-lite-preview", "gemini-3.8-flash", "gemini-flash-latest"]
 
 
 # Compact, fast system prompt (minimise tokens)
