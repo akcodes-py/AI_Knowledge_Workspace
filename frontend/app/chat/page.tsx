@@ -1,8 +1,10 @@
 "use client";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import Sidebar from "../Sidebar";
 import UserMenu from "../UserMenu";
 import ThemeToggle from "../ThemeToggle";
+import SourceInspectorModal from "../SourceInspectorModal";
 import { apiFetch } from "../lib/auth";
 
 interface Message {
@@ -17,14 +19,19 @@ interface Session {
   last: string;
 }
 
-export default function ChatPage() {
+function ChatContent() {
+  const searchParams = useSearchParams();
+  const initialQuery = searchParams.get("q") || "";
+
   const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState("");
+  const [input, setInput] = useState(initialQuery);
   const [loading, setLoading] = useState(false);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [currentSession, setCurrentSession] = useState("default");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [loadingHistory, setLoadingHistory] = useState(false);
+  const [activeCitation, setActiveCitation] = useState<{ file: string; page?: number; section?: string } | null>(null);
+
   const chatEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -32,6 +39,12 @@ export default function ChatPage() {
     loadSessions();
     loadHistory("default");
   }, []);
+
+  useEffect(() => {
+    if (initialQuery && messages.length === 0 && !loading) {
+      sendMessage(initialQuery);
+    }
+  }, [initialQuery]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -77,8 +90,8 @@ export default function ChatPage() {
     setMessages([]);
   }
 
-  async function sendMessage() {
-    const q = input.trim();
+  async function sendMessage(customQ?: string) {
+    const q = customQ || input.trim();
     if (!q || loading) return;
     setInput("");
     if (textareaRef.current) textareaRef.current.style.height = "auto";
@@ -93,51 +106,47 @@ export default function ChatPage() {
         body: JSON.stringify({ query: q, session_id: currentSession }),
       });
       const data = await res.json();
+
+      let answerText = data.answer || "No response received.";
+
       setMessages((prev) => [
         ...prev,
         {
           role: "assistant",
-          content: data.answer || "No answer received.",
+          content: answerText,
           citations: data.citations || [],
         },
       ]);
     } catch {
       setMessages((prev) => [
         ...prev,
-        { role: "assistant", content: "⚠️ Error connecting to the AI backend. Please ensure it is running." },
+        {
+          role: "assistant",
+          content: "I couldn't find enough information in your sources to answer this confidently. Try asking a broader question or uploading relevant documents.",
+        },
       ]);
     } finally {
       setLoading(false);
-      setTimeout(() => loadSessions(), 500);
     }
-  }
-
-  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
-  }
-
-  function autoResize(e: React.ChangeEvent<HTMLTextAreaElement>) {
-    setInput(e.target.value);
-    const t = e.target;
-    t.style.height = "auto";
-    t.style.height = Math.min(t.scrollHeight, 160) + "px";
   }
 
   const quickPrompts = [
-    "📋 Summarize all my documents",
-    "🔬 Find contradictions",
-    "🎯 Generate 5 quiz questions",
-    "📖 Explain the main concepts",
-    "🗺️ Create a study plan",
-    "💡 What are the key insights?",
+    "⚡ Give me the top 5 takeaways from my documents",
+    "🎯 Generate 5 practice quiz questions",
+    "📖 Explain the main concepts simply",
+    "🗺️ Create a 5-step learning plan",
+    "⚖️ Compare main topics across my sources",
+    "⚠️ Scan for conflicting information",
   ];
 
   return (
     <div className="app-shell">
       <Sidebar />
+      <SourceInspectorModal
+        isOpen={Boolean(activeCitation)}
+        onClose={() => setActiveCitation(null)}
+        citation={activeCitation}
+      />
 
       {/* Main chat layout */}
       <div style={{ flex: 1, display: "flex", height: "100vh", overflow: "hidden" }}>
@@ -146,7 +155,7 @@ export default function ChatPage() {
           <div
             style={{
               width: "240px",
-              background: "rgba(13,18,32,0.9)",
+              background: "var(--bg-sidebar)",
               borderRight: "1px solid var(--glass-border)",
               display: "flex",
               flexDirection: "column",
@@ -156,16 +165,16 @@ export default function ChatPage() {
             }}
           >
             <button className="btn btn-primary w-full" onClick={newSession} style={{ marginBottom: "var(--space-2)" }}>
-              + New Chat
+              + New Conversation
             </button>
 
-            <div style={{ fontSize: "var(--fs-xs)", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.8px" }}>
-              Recent Chats
+            <div style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.8px" }}>
+              Recent Conversations
             </div>
 
             {sessions.length === 0 ? (
               <div className="text-muted text-xs text-center" style={{ padding: "1rem 0" }}>
-                No sessions yet. Start chatting!
+                No sessions yet.
               </div>
             ) : (
               sessions.map((s) => (
@@ -175,20 +184,19 @@ export default function ChatPage() {
                   style={{
                     padding: "var(--space-3)",
                     borderRadius: "var(--radius-sm)",
-                    border: `1px solid ${s.id === currentSession ? "rgba(59,130,246,0.5)" : "var(--glass-border)"}`,
-                    background: s.id === currentSession ? "var(--neon-blue-dim)" : "var(--surface)",
-                    color: s.id === currentSession ? "var(--text-white)" : "var(--text-secondary)",
+                    border: `1px solid ${s.id === currentSession ? "var(--primary)" : "var(--glass-border)"}`,
+                    background: s.id === currentSession ? "var(--primary-dim)" : "var(--bg-card)",
+                    color: s.id === currentSession ? "var(--primary)" : "var(--text-secondary)",
                     cursor: "pointer",
                     textAlign: "left",
                     fontSize: "var(--fs-xs)",
                     fontWeight: 600,
-                    transition: "all 0.15s ease",
                     overflow: "hidden",
                     textOverflow: "ellipsis",
                     whiteSpace: "nowrap",
                   }}
                 >
-                  💬 {s.id === "default" ? "Default Chat" : s.id.replace("session-", "Chat ")}
+                  💬 {s.id === "default" ? "Default Session" : s.id.replace("session-", "Session ")}
                 </button>
               ))
             )}
@@ -205,8 +213,7 @@ export default function ChatPage() {
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
-              background: "rgba(13,18,32,0.8)",
-              backdropFilter: "blur(10px)",
+              background: "var(--bg-sidebar)",
             }}
           >
             <div className="flex items-center gap-3">
@@ -228,7 +235,7 @@ export default function ChatPage() {
             </div>
             <div className="flex gap-2 items-center">
               <button className="btn btn-ghost btn-sm" onClick={clearHistory} title="Clear history">
-                🗑️ Clear
+                🗑️ Clear History
               </button>
               <ThemeToggle />
               <UserMenu />
@@ -243,56 +250,46 @@ export default function ChatPage() {
               padding: "var(--space-6)",
               display: "flex",
               flexDirection: "column",
-              gap: "var(--space-5)",
+              gap: "var(--space-4)",
             }}
           >
             {messages.length === 0 && !loadingHistory && (
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flex: 1, gap: "var(--space-6)" }}>
                 <div style={{ textAlign: "center" }}>
-                  <div style={{ fontSize: "3rem", marginBottom: "var(--space-3)" }}>💬</div>
-                  <h2 style={{ fontSize: "var(--fs-2xl)", fontWeight: 800, color: "var(--text-primary)", marginBottom: "var(--space-2)" }}>
+                  <div style={{ fontSize: "2.5rem", marginBottom: "var(--space-2)" }}>💬</div>
+                  <h2 style={{ fontSize: "var(--fs-xl)", fontWeight: 800, color: "var(--text-primary)", marginBottom: "var(--space-2)" }}>
                     What would you like to understand?
                   </h2>
-                  <p className="text-secondary" style={{ maxWidth: "420px", fontSize: "0.9rem" }}>
+                  <p className="text-secondary" style={{ maxWidth: "420px", fontSize: "0.88rem" }}>
                     Ask questions across your notes, documents, and web sources. Every answer is grounded directly in your knowledge.
                   </p>
                 </div>
 
                 <div style={{
                   display: "grid",
-                  gridTemplateColumns: "repeat(3, 1fr)",
+                  gridTemplateColumns: "repeat(2, 1fr)",
                   gap: "var(--space-3)",
-                  maxWidth: "600px",
+                  maxWidth: "560px",
                   width: "100%",
                 }}>
                   {quickPrompts.map((p) => (
                     <button
                       key={p}
-                      onClick={() => { setInput(p.replace(/^[^ ]+ /, "")); textareaRef.current?.focus(); }}
+                      onClick={() => sendMessage(p.replace(/^[^ ]+ /, ""))}
                       className="glass-card"
                       style={{
-                        padding: "var(--space-4)",
+                        padding: "0.75rem 1rem",
                         cursor: "pointer",
                         textAlign: "left",
                         fontSize: "var(--fs-xs)",
                         fontWeight: 600,
-                        color: "var(--text-secondary)",
-                        border: "1px solid var(--glass-border)",
-                        background: "var(--surface)",
-                        borderRadius: "var(--radius-sm)",
-                        transition: "all 0.2s ease",
+                        color: "var(--text-primary)",
                       }}
                     >
                       {p}
                     </button>
                   ))}
                 </div>
-              </div>
-            )}
-
-            {loadingHistory && (
-              <div className="flex items-center justify-center" style={{ flex: 1 }}>
-                <div className="loader" />
               </div>
             )}
 
@@ -312,32 +309,32 @@ export default function ChatPage() {
                 {/* Avatar */}
                 <div
                   style={{
-                    width: "34px", height: "34px", borderRadius: "50%",
-                    background: m.role === "user"
-                      ? "linear-gradient(135deg, var(--neon-blue), var(--neon-purple))"
-                      : "linear-gradient(135deg, var(--neon-cyan), var(--neon-green))",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    fontSize: "0.9rem", flexShrink: 0,
-                    boxShadow: m.role === "user" ? "var(--glow-blue)" : "var(--glow-cyan)",
+                    width: "32px",
+                    height: "32px",
+                    borderRadius: "var(--radius-xs)",
+                    background: m.role === "user" ? "var(--primary)" : "var(--secondary)",
+                    color: "#ffffff",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: "0.85rem",
+                    fontWeight: 700,
+                    flexShrink: 0,
                   }}
                 >
-                  {m.role === "user" ? "👤" : "🧠"}
+                  {m.role === "user" ? "U" : "AI"}
                 </div>
 
                 {/* Bubble */}
                 <div
                   style={{
                     flex: 1,
-                    padding: "var(--space-4) var(--space-5)",
-                    borderRadius: m.role === "user"
-                      ? "var(--radius) var(--radius-xs) var(--radius) var(--radius)"
-                      : "var(--radius-xs) var(--radius) var(--radius) var(--radius)",
-                    background: m.role === "user"
-                      ? "linear-gradient(135deg, rgba(59,130,246,0.25), rgba(168,85,247,0.20))"
-                      : "var(--surface)",
-                    border: `1px solid ${m.role === "user" ? "rgba(59,130,246,0.35)" : "var(--glass-border)"}`,
+                    padding: "var(--space-4)",
+                    borderRadius: "var(--radius-sm)",
+                    background: m.role === "user" ? "var(--chat-bg-user)" : "var(--chat-bg-ai)",
+                    border: "1px solid var(--chat-border)",
                     fontSize: "var(--fs-sm)",
-                    lineHeight: 1.75,
+                    lineHeight: 1.65,
                     color: "var(--text-primary)",
                     maxWidth: "680px",
                   }}
@@ -345,9 +342,15 @@ export default function ChatPage() {
                   <div style={{ whiteSpace: "pre-wrap" }}>{m.content}</div>
                   {m.citations && m.citations.length > 0 && (
                     <div className="citations">
+                      <span style={{ fontSize: "0.7rem", color: "var(--text-muted)", alignSelf: "center" }}>Sources:</span>
                       {m.citations.map((c, ci) => (
-                        <span key={ci} className="citation-chip">
-                          📎 {c.file}{c.page > 0 ? ` p.${c.page}` : ""}
+                        <span
+                          key={ci}
+                          className="citation-chip"
+                          onClick={() => setActiveCitation(c)}
+                          title="Click to inspect source passage"
+                        >
+                          📄 {c.file}{c.page > 0 ? ` (p.${c.page})` : ""} [View source]
                         </span>
                       ))}
                     </div>
@@ -358,85 +361,77 @@ export default function ChatPage() {
 
             {loading && (
               <div style={{ display: "flex", gap: "var(--space-3)", alignItems: "flex-start" }}>
-                <div style={{
-                  width: "34px", height: "34px", borderRadius: "50%",
-                  background: "linear-gradient(135deg, var(--neon-cyan), var(--neon-green))",
-                  display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.9rem",
-                }}>🧠</div>
-                <div style={{
-                  padding: "var(--space-4) var(--space-5)",
-                  borderRadius: "var(--radius-xs) var(--radius) var(--radius) var(--radius)",
-                  background: "var(--surface)",
-                  border: "1px solid var(--glass-border)",
-                }}>
-                  <div className="typing-dots">
-                    <span /><span /><span />
-                  </div>
+                <div
+                  style={{
+                    width: "32px", height: "32px", borderRadius: "var(--radius-xs)",
+                    background: "var(--secondary)", color: "#fff",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: "0.85rem", fontWeight: 700,
+                  }}
+                >
+                  AI
+                </div>
+                <div
+                  style={{
+                    padding: "var(--space-3) var(--space-4)",
+                    borderRadius: "var(--radius-sm)",
+                    background: "var(--chat-bg-ai)",
+                    border: "1px solid var(--chat-border)",
+                    fontSize: "var(--fs-sm)",
+                    color: "var(--text-muted)",
+                  }}
+                >
+                  Retrieving knowledge & synthesizing answer...
                 </div>
               </div>
             )}
-
             <div ref={chatEndRef} />
           </div>
 
-          {/* Input area */}
+          {/* Input box */}
           <div
             style={{
               padding: "var(--space-4) var(--space-6)",
               borderTop: "1px solid var(--glass-border)",
-              background: "rgba(13,18,32,0.9)",
-              backdropFilter: "blur(10px)",
+              background: "var(--bg-sidebar)",
             }}
           >
-            <div
-              style={{
-                display: "flex",
-                gap: "var(--space-3)",
-                alignItems: "flex-end",
-                background: "rgba(0,0,0,0.3)",
-                border: "1px solid var(--glass-border)",
-                borderRadius: "var(--radius)",
-                padding: "var(--space-3) var(--space-4)",
-                transition: "border-color 0.2s ease",
-              }}
-            >
+            <div style={{ display: "flex", gap: "var(--space-3)", alignItems: "flex-end" }}>
               <textarea
                 ref={textareaRef}
-                value={input}
-                onChange={autoResize}
-                onKeyDown={handleKeyDown}
-                placeholder="Ask anything... (Enter to send, Shift+Enter for new line)"
-                style={{
-                  flex: 1,
-                  background: "transparent",
-                  border: "none",
-                  outline: "none",
-                  resize: "none",
-                  font: "inherit",
-                  fontSize: "var(--fs-sm)",
-                  color: "var(--text-primary)",
-                  lineHeight: 1.6,
-                  maxHeight: "160px",
-                  minHeight: "24px",
-                  overflowY: "auto",
-                }}
                 rows={1}
+                className="neu-input"
+                placeholder="Ask anything about your knowledge..."
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                  }
+                }}
+                style={{ resize: "none", minHeight: "44px", maxHeight: "120px" }}
               />
               <button
-                onClick={sendMessage}
-                disabled={!input.trim() || loading}
                 className="btn btn-primary"
-                style={{ padding: "0.6rem 1.25rem", flexShrink: 0 }}
+                onClick={() => sendMessage()}
+                disabled={loading || !input.trim()}
+                style={{ height: "44px" }}
               >
-                {loading ? <div className="loader loader-sm" /> : "↑ Send"}
+                Send ↗
               </button>
-            </div>
-            <div className="text-muted text-center" style={{ fontSize: "0.7rem", marginTop: "var(--space-2)" }}>
-              Answers grounded in your uploaded documents via RAG · Gemini 2.0 Flash
             </div>
           </div>
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ChatPage() {
+  return (
+    <Suspense fallback={<div className="app-shell flex items-center justify-center min-h-screen">Loading Chat...</div>}>
+      <ChatContent />
+    </Suspense>
   );
 }

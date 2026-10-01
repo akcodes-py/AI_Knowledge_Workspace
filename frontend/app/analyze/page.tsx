@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import Sidebar from "../Sidebar";
 import UserMenu from "../UserMenu";
 import ThemeToggle from "../ThemeToggle";
@@ -15,15 +16,25 @@ async function postApi(path: string, body: any) {
 
 type Tab = "compare" | "contradictions" | "research" | "graph";
 
-export default function Analyze() {
-  const [topic, setTopic] = useState("paging vs segmentation");
-  const [activeTab, setActiveTab] = useState<Tab>("compare");
+function AnalyzeContent() {
+  const searchParams = useSearchParams();
+  const initialTab = (searchParams.get("tab") as Tab) || "compare";
+
+  const [topic, setTopic] = useState("Paging vs Segmentation");
+  const [activeTab, setActiveTab] = useState<Tab>(initialTab);
   const [loading, setLoading] = useState(false);
 
   const [compare, setCompare] = useState("");
   const [contradictions, setContradictions] = useState<any[]>([]);
   const [research, setResearch] = useState<any>(null);
   const [graph, setGraph] = useState<{ nodes?: string[]; edges?: { from: string; to: string; label?: string }[]; [k: string]: any } | null>(null);
+
+  useEffect(() => {
+    const t = searchParams.get("tab") as Tab;
+    if (t && ["compare", "contradictions", "research", "graph"].includes(t)) {
+      setActiveTab(t);
+    }
+  }, [searchParams]);
 
   async function run() {
     if (!topic.trim()) return;
@@ -43,27 +54,28 @@ export default function Analyze() {
         setGraph(j);
       }
     } catch {
-      setCompare("⚠️ Error reaching backend.");
+      setCompare("⚠️ Could not reach backend server.");
     } finally {
       setLoading(false);
     }
   }
 
-  const tabs: { id: Tab; icon: string; label: string; color: string }[] = [
-    { id: "compare",       icon: "⚖️",  label: "Compare",         color: "btn-primary" },
-    { id: "contradictions",icon: "⚡",  label: "Contradictions",  color: "btn-rose" },
-    { id: "research",      icon: "🔭",  label: "Research Summary", color: "btn-teal" },
-    { id: "graph",         icon: "🕸️",  label: "Knowledge Graph",  color: "btn-gold" },
+  const tabs: { id: Tab; icon: string; label: string }[] = [
+    { id: "compare", icon: "⚖️", label: "Compare Concepts" },
+    { id: "contradictions", icon: "⚠️", label: "Find Contradictions" },
+    { id: "research", icon: "🔭", label: "Research Summary" },
+    { id: "graph", icon: "🔗", label: "Knowledge Graph" },
   ];
 
   return (
     <div className="app-shell">
       <Sidebar />
       <main className="main-content">
+        {/* Header */}
         <div className="page-header flex justify-between items-center flex-wrap gap-4">
           <div>
             <h1 className="page-title">🔍 Analyze & Explore</h1>
-            <p className="page-subtitle">Discover connections, compare concepts, and identify potential contradictions.</p>
+            <p className="page-subtitle">Discover connections, compare ideas, and identify conflicting statements in your knowledge.</p>
           </div>
           <div className="flex items-center gap-2">
             <ThemeToggle />
@@ -71,181 +83,128 @@ export default function Analyze() {
           </div>
         </div>
 
-        {/* Topic input */}
-        <div className="neu-card mb-6">
-          <div className="section-title">🔎 Topic / Query</div>
-          <div className="input-group">
+        {/* Input & Controls */}
+        <div className="glass-card mb-6">
+          <div className="section-title">🔎 Topic / Concept Query</div>
+          <div className="flex gap-2">
             <input
               className="neu-input"
-              placeholder="e.g. paging vs segmentation, transformer attention…"
+              placeholder="e.g. Paging vs Segmentation, Transformer Attention vs RNN..."
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && run()}
-              style={{ borderRadius: "var(--radius)" }}
             />
-            <button
-              className={`btn ${tabs.find((t) => t.id === activeTab)?.color || "btn-primary"}`}
-              onClick={run}
-              disabled={loading}
-            >
-              {loading ? <><div className="loader loader-sm" /> Analyzing…</> : "Analyze 🔬"}
+            <button className="btn btn-primary" onClick={run} disabled={loading}>
+              {loading ? "Analyzing..." : "Run Analysis ↗"}
             </button>
           </div>
         </div>
 
-        {/* Tab bar */}
-        <div className="tab-bar">
+        {/* Tab Navigation */}
+        <div className="flex gap-2 mb-6 border-b border-gray-700 pb-2">
           {tabs.map((t) => (
-            <button key={t.id} className={`tab${activeTab === t.id ? " active" : ""}`} onClick={() => setActiveTab(t.id)}>
-              {t.icon} {t.label}
+            <button
+              key={t.id}
+              onClick={() => setActiveTab(t.id)}
+              className={`btn btn-sm ${activeTab === t.id ? "btn-primary" : "btn-ghost"}`}
+            >
+              <span>{t.icon}</span>
+              <span>{t.label}</span>
             </button>
           ))}
         </div>
 
-        {/* Compare */}
+        {/* Tab 1: Compare */}
         {activeTab === "compare" && (
-          <div className="neu-card">
-            <div className="section-title">⚖️ Document Comparison</div>
+          <div className="glass-card">
+            <div className="section-title">⚖️ Concept Comparison</div>
             {compare ? (
-              <div className="output-box" style={{ fontFamily: "var(--font-sans)" }}>{compare}</div>
+              <div style={{ whiteSpace: "pre-wrap", lineHeight: 1.7, fontSize: "0.92rem", color: "var(--text-primary)" }}>
+                {compare}
+              </div>
             ) : (
-              <div className="output-box"><span className="output-placeholder">A side-by-side comparison of documents will appear here.</span></div>
+              <div className="text-muted text-center p-8 text-sm">
+                Enter a comparison topic above (e.g. "Paging vs Segmentation") and click <strong>Run Analysis</strong>.
+              </div>
             )}
           </div>
         )}
 
-        {/* Contradictions */}
+        {/* Tab 2: Contradictions */}
         {activeTab === "contradictions" && (
-          <div className="neu-card">
-            <div className="flex items-center justify-between mb-4" style={{ flexWrap: "wrap", gap: "var(--space-3)" }}>
-              <div className="section-title" style={{ marginBottom: 0 }}>⚡ Contradictions Found</div>
-              {contradictions.length > 0 && (
-                <span className="badge badge-rose">{contradictions.length} contradictions</span>
-              )}
-            </div>
+          <div className="glass-card">
+            <div className="section-title">⚠️ Contradiction Inspector</div>
             {contradictions.length > 0 ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
-                {contradictions.map((c: any, i: number) => (
-                  <div key={i} className="neu-card-sm" style={{ borderLeft: "3px solid var(--accent-2)", paddingLeft: "var(--space-5)" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)", marginBottom: "var(--space-2)" }}>
-                      <span className="badge badge-rose">#{i + 1}</span>
-                      {c.severity && <span className="badge badge-muted">{c.severity}</span>}
+              <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                {contradictions.map((item, idx) => (
+                  <div key={idx} className="neu-card-inset">
+                    <div style={{ fontWeight: 700, fontSize: "0.95rem", color: "var(--semantic-amber)", marginBottom: "0.4rem" }}>
+                      Potential Discrepancy #{idx + 1}
                     </div>
-                    <div style={{ fontSize: "var(--fs-sm)", color: "var(--text-primary)", fontWeight: 500 }}>
-                      {typeof c === "string" ? c : c.description || c.contradiction || JSON.stringify(c)}
+                    <div style={{ fontSize: "0.88rem", color: "var(--text-primary)", lineHeight: 1.6 }}>
+                      {typeof item === "string" ? item : JSON.stringify(item, null, 2)}
                     </div>
-                    {c.sources && (
-                      <div style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)", marginTop: "var(--space-2)" }}>
-                        Sources: {Array.isArray(c.sources) ? c.sources.join(", ") : c.sources}
-                      </div>
-                    )}
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="output-box"><span className="output-placeholder">Detected contradictions between documents will be listed as flagged cards.</span></div>
+              <div className="text-muted text-center p-8 text-sm">
+                Click <strong>Run Analysis</strong> to scan your sources for conflicting statements or facts.
+              </div>
             )}
           </div>
         )}
 
-        {/* Research */}
+        {/* Tab 3: Research Summary */}
         {activeTab === "research" && (
-          <div className="neu-card">
+          <div className="glass-card">
             <div className="section-title">🔭 Research Summary</div>
             {research ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-5)" }}>
-                {research.title && (
-                  <div style={{ fontSize: "var(--fs-xl)", fontWeight: 700, color: "var(--text-primary)" }}>{research.title}</div>
-                )}
-                {research.abstract && (
-                  <div className="neu-card-sm">
-                    <div style={{ fontSize: "var(--fs-xs)", fontWeight: 600, color: "var(--accent-teal)", textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: "var(--space-2)" }}>Abstract</div>
-                    <div style={{ fontSize: "var(--fs-sm)", color: "var(--text-secondary)", lineHeight: 1.7 }}>{research.abstract}</div>
-                  </div>
-                )}
-                {research.key_points && Array.isArray(research.key_points) && (
-                  <div>
-                    <div style={{ fontWeight: 600, fontSize: "var(--fs-sm)", marginBottom: "var(--space-3)", color: "var(--text-primary)" }}>🔑 Key Points</div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
-                      {research.key_points.map((p: string, i: number) => (
-                        <div key={i} className="neu-card-sm" style={{ display: "flex", gap: "var(--space-3)", alignItems: "flex-start" }}>
-                          <span style={{ color: "var(--accent-teal)", fontWeight: 700, fontSize: "var(--fs-xs)" }}>0{i + 1}</span>
-                          <span style={{ fontSize: "var(--fs-sm)", color: "var(--text-secondary)" }}>{p}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {!research.title && !research.abstract && !research.key_points && (
-                  <div className="output-box">{JSON.stringify(research, null, 2)}</div>
-                )}
+              <div style={{ whiteSpace: "pre-wrap", lineHeight: 1.7, fontSize: "0.92rem", color: "var(--text-primary)" }}>
+                {typeof research === "string" ? research : JSON.stringify(research, null, 2)}
               </div>
             ) : (
-              <div className="output-box"><span className="output-placeholder">A structured research summary with abstract, key points, and methodology will appear here.</span></div>
+              <div className="text-muted text-center p-8 text-sm">
+                Enter a research topic above to generate a synthesized overview across all sources.
+              </div>
             )}
           </div>
         )}
 
-        {/* Knowledge Graph */}
+        {/* Tab 4: Knowledge Graph */}
         {activeTab === "graph" && (
-          <div className="neu-card">
-            <div className="flex items-center justify-between mb-4" style={{ flexWrap: "wrap", gap: "var(--space-3)" }}>
-              <div className="section-title" style={{ marginBottom: 0 }}>🕸️ Knowledge Graph</div>
-              {graph && (
-                <div style={{ display: "flex", gap: "var(--space-2)" }}>
-                  {graph.nodes && <span className="badge badge-gold">{graph.nodes.length} nodes</span>}
-                  {graph.edges && <span className="badge badge-muted">{graph.edges.length} edges</span>}
+          <div className="glass-card">
+            <div className="section-title">🔗 Concept Knowledge Graph</div>
+            {graph && (graph.nodes || graph.edges) ? (
+              <div>
+                <div className="mb-4 text-sm text-secondary">
+                  Found {graph.nodes?.length || 0} core nodes and {graph.edges?.length || 0} relationships.
                 </div>
-              )}
-            </div>
-
-            {graph ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-6)" }}>
-                {/* Nodes */}
-                {graph.nodes && Array.isArray(graph.nodes) && graph.nodes.length > 0 && (
-                  <div>
-                    <div style={{ fontWeight: 600, fontSize: "var(--fs-sm)", color: "var(--text-primary)", marginBottom: "var(--space-3)" }}>Concepts</div>
-                    <div style={{ display: "flex", flexWrap: "wrap" }}>
-                      {graph.nodes.map((n: any, i: number) => (
-                        <span key={i} className="kg-node">
-                          ◆ {typeof n === "string" ? n : n.id || n.label || JSON.stringify(n)}
-                        </span>
-                      ))}
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "0.75rem" }}>
+                  {graph.nodes?.map((node, i) => (
+                    <div key={i} className="neu-card-inset flex items-center gap-2">
+                      <span style={{ color: "var(--primary)" }}>●</span>
+                      <span style={{ fontWeight: 600, fontSize: "0.85rem" }}>{node}</span>
                     </div>
-                  </div>
-                )}
-
-                {/* Edges */}
-                {graph.edges && Array.isArray(graph.edges) && graph.edges.length > 0 && (
-                  <div>
-                    <div style={{ fontWeight: 600, fontSize: "var(--fs-sm)", color: "var(--text-primary)", marginBottom: "var(--space-3)" }}>Relationships</div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
-                      {graph.edges.slice(0, 20).map((e: any, i: number) => (
-                        <div key={i} className="neu-card-sm" style={{ display: "flex", alignItems: "center", gap: "var(--space-3)", fontSize: "var(--fs-sm)" }}>
-                          <span style={{ color: "var(--accent)", fontWeight: 600 }}>
-                            {typeof e === "string" ? e : e.from || e.source || "?"}
-                          </span>
-                          <span style={{ color: "var(--text-muted)", fontSize: "var(--fs-xs)" }}>
-                            ──{typeof e === "object" && e.label ? ` ${e.label} ` : "→"}──▶
-                          </span>
-                          <span style={{ color: "var(--accent-teal)", fontWeight: 600 }}>
-                            {typeof e === "object" ? e.to || e.target || "?" : ""}
-                          </span>
-                        </div>
-                      ))}
-                      {graph.edges.length > 20 && (
-                        <div className="text-xs text-muted">+ {graph.edges.length - 20} more relationships</div>
-                      )}
-                    </div>
-                  </div>
-                )}
+                  ))}
+                </div>
               </div>
             ) : (
-              <div className="output-box"><span className="output-placeholder">Knowledge graph nodes and edges will be displayed here as interactive concept bubbles.</span></div>
+              <div className="text-muted text-center p-8 text-sm">
+                Click <strong>Run Analysis</strong> to construct a concept graph from your documents.
+              </div>
             )}
           </div>
         )}
       </main>
     </div>
+  );
+}
+
+export default function Analyze() {
+  return (
+    <Suspense fallback={<div className="app-shell flex items-center justify-center min-h-screen">Loading...</div>}>
+      <AnalyzeContent />
+    </Suspense>
   );
 }

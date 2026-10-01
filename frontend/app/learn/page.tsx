@@ -75,12 +75,12 @@ export default function Learn() {
     });
   }
 
-  const tabs: { id: Tab; icon: string; label: string; color: string }[] = [
-    { id: "summary",    icon: "📝", label: "Summary",     color: "btn-primary" },
-    { id: "flashcards", icon: "🃏", label: "Flashcards",  color: "btn-teal" },
-    { id: "paper",      icon: "📋", label: "Question Paper", color: "btn-gold" },
-    { id: "diagram",    icon: "🗺️",  label: "Diagram",     color: "btn-green" },
-    { id: "animation",  icon: "🎬", label: "Animation",   color: "btn-rose" },
+  const tabs: { id: Tab; icon: string; label: string }[] = [
+    { id: "summary", icon: "📝", label: "Summary" },
+    { id: "flashcards", icon: "🃏", label: "Flashcards" },
+    { id: "paper", icon: "📋", label: "Question Paper" },
+    { id: "diagram", icon: "🗺️", label: "Diagram" },
+    { id: "animation", icon: "🎬", label: "Animation Storyboard" },
   ];
 
   return (
@@ -99,28 +99,32 @@ export default function Learn() {
         </div>
 
         {/* Topic input */}
-        <div className="neu-card mb-6">
+        <div className="glass-card mb-6">
           <div className="section-title">🔎 Topic / Subject</div>
-          <div className="input-group">
+          <div className="flex gap-2">
             <input
               className="neu-input"
-              placeholder="e.g. paging, neural networks, photosynthesis…"
+              placeholder="e.g. Virtual Memory, Neural Networks, Photosynthesis..."
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && run()}
-              style={{ borderRadius: "var(--radius)" }}
             />
-            <button className={`btn ${tabs.find((t) => t.id === activeTab)?.color || "btn-primary"}`} onClick={run} disabled={loading}>
-              {loading ? <><div className="loader loader-sm" /> Generating…</> : "Generate ✨"}
+            <button className="btn btn-primary" onClick={run} disabled={loading}>
+              {loading ? "Generating..." : "Generate ✨"}
             </button>
           </div>
         </div>
 
         {/* Tab bar */}
-        <div className="tab-bar">
+        <div className="flex gap-2 mb-6 border-b border-gray-700 pb-2 flex-wrap">
           {tabs.map((t) => (
-            <button key={t.id} className={`tab${activeTab === t.id ? " active" : ""}`} onClick={() => setActiveTab(t.id)}>
-              {t.icon} {t.label}
+            <button
+              key={t.id}
+              className={`btn btn-sm ${activeTab === t.id ? "btn-primary" : "btn-ghost"}`}
+              onClick={() => setActiveTab(t.id)}
+            >
+              <span>{t.icon}</span>
+              <span>{t.label}</span>
             </button>
           ))}
         </div>
