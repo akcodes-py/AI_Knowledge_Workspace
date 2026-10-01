@@ -2,6 +2,7 @@
 import { useState, useRef, useEffect } from "react";
 import Sidebar from "./Sidebar";
 import UserMenu from "./UserMenu";
+import ThemeToggle from "./ThemeToggle";
 import Link from "next/link";
 import { apiFetch } from "./lib/auth";
 
@@ -169,14 +170,9 @@ export default function Home() {
         <div className="page-header">
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <div>
-              <div className="flex items-center gap-2 mb-2">
-                <span className="badge badge-accent">🚀 v2.0</span>
-                <span className="badge badge-teal">⚡ RAG+LangGraph</span>
-                <span className="badge badge-green">🔒 JWT Auth</span>
-              </div>
               <h1 className="page-title">AI Knowledge Workspace</h1>
               <p className="page-subtitle">
-                Dark-mode intelligence hub · Gemini 2.0 Flash · Source-grounded RAG
+                Upload anything, understand everything, ask anything — source-grounded AI intelligence.
               </p>
             </div>
             <div className="flex items-center gap-3">
@@ -189,6 +185,7 @@ export default function Home() {
               <Link href="/chat" className="btn btn-teal" style={{ textDecoration: "none" }}>
                 💬 Open Chat
               </Link>
+              <ThemeToggle />
               <UserMenu />
             </div>
           </div>

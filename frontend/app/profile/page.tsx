@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "../Sidebar";
+import ThemeToggle from "../ThemeToggle";
 import { apiFetch, isLoggedIn, clearToken } from "../lib/auth";
 
 interface UserInfo {
@@ -79,9 +80,12 @@ export default function ProfilePage() {
     <div className="app-shell">
       <Sidebar />
       <main className="main-content">
-        <div className="page-header">
-          <h1 className="page-title">Profile & Account</h1>
-          <p className="page-subtitle">Manage your account, documents, and preferences</p>
+        <div className="page-header flex justify-between items-center flex-wrap gap-4">
+          <div>
+            <h1 className="page-title">Profile & Account</h1>
+            <p className="page-subtitle">Manage your account, documents, and preferences</p>
+          </div>
+          <ThemeToggle />
         </div>
 
         <div className="bento-grid">

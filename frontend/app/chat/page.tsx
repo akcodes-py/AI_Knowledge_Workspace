@@ -2,6 +2,7 @@
 import { useState, useRef, useEffect } from "react";
 import Sidebar from "../Sidebar";
 import UserMenu from "../UserMenu";
+import ThemeToggle from "../ThemeToggle";
 import { apiFetch } from "../lib/auth";
 
 interface Message {
@@ -229,10 +230,7 @@ export default function ChatPage() {
               <button className="btn btn-ghost btn-sm" onClick={clearHistory} title="Clear history">
                 🗑️ Clear
               </button>
-              <div className="status-pill status-ok">
-                <div className="status-dot" />
-                Live
-              </div>
+              <ThemeToggle />
               <UserMenu />
             </div>
           </div>

@@ -3,6 +3,7 @@ import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { getToken, clearToken, isLoggedIn, exchangeCookieForToken } from "./lib/auth";
+import ThemeToggle from "./ThemeToggle";
 
 const navItems = [
   {
@@ -130,6 +131,11 @@ export default function Sidebar() {
         <div style={{ fontSize: "11px", fontWeight: 500, color: "var(--text-muted)", textAlign: "center" }}>
           Gemini 2.0 Flash · RAG Active
         </div>
+      </div>
+
+      {/* Theme Switcher */}
+      <div style={{ display: "flex", justifyContent: "center", marginBottom: "var(--space-2)" }}>
+        <ThemeToggle />
       </div>
 
       {/* Profile / Auth — Bottom of sidebar */}
