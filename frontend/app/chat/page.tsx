@@ -218,11 +218,11 @@ export default function ChatPage() {
                 ☰
               </button>
               <div>
-                <div className="text-white font-bold" style={{ fontSize: "var(--fs-base)" }}>
-                  🤖 AI Knowledge Assistant
+                <div style={{ fontSize: "var(--fs-base)", fontWeight: 700, color: "var(--text-primary)" }}>
+                  Ask your knowledge anything
                 </div>
                 <div className="text-muted" style={{ fontSize: "var(--fs-xs)" }}>
-                  Powered by Gemini 2.0 Flash · RAG on your documents
+                  Source-grounded personal assistant
                 </div>
               </div>
             </div>
@@ -249,12 +249,12 @@ export default function ChatPage() {
             {messages.length === 0 && !loadingHistory && (
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flex: 1, gap: "var(--space-6)" }}>
                 <div style={{ textAlign: "center" }}>
-                  <div style={{ fontSize: "3.5rem", marginBottom: "var(--space-4)" }}>🧠</div>
-                  <h2 className="gradient-text" style={{ fontSize: "var(--fs-2xl)", fontWeight: 900, marginBottom: "var(--space-2)" }}>
-                    AI Knowledge Assistant
+                  <div style={{ fontSize: "3rem", marginBottom: "var(--space-3)" }}>💬</div>
+                  <h2 style={{ fontSize: "var(--fs-2xl)", fontWeight: 800, color: "var(--text-primary)", marginBottom: "var(--space-2)" }}>
+                    What would you like to understand?
                   </h2>
-                  <p className="text-secondary" style={{ maxWidth: "400px" }}>
-                    Ask me anything about your uploaded documents. I use RAG to ground every answer in your knowledge base.
+                  <p className="text-secondary" style={{ maxWidth: "420px", fontSize: "0.9rem" }}>
+                    Ask questions across your notes, documents, and web sources. Every answer is grounded directly in your knowledge.
                   </p>
                 </div>
 

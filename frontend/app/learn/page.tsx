@@ -1,6 +1,8 @@
 "use client";
 import { useState } from "react";
 import Sidebar from "../Sidebar";
+import UserMenu from "../UserMenu";
+import ThemeToggle from "../ThemeToggle";
 
 async function postApi(path: string, body: any) {
   const r = await fetch(`/api${path}`, {
@@ -85,9 +87,15 @@ export default function Learn() {
     <div className="app-shell">
       <Sidebar />
       <main className="main-content">
-        <div className="page-header">
-          <h1 className="page-title">📚 <span style={{ color: "var(--accent)" }}>Learn</span></h1>
-          <p className="page-subtitle">Generate summaries, flashcards, question papers, diagrams & animation storyboards</p>
+        <div className="page-header flex justify-between items-center flex-wrap gap-4">
+          <div>
+            <h1 className="page-title">📚 Learn & Notes</h1>
+            <p className="page-subtitle">Transform your knowledge into structured summaries, flashcards, and exam papers.</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <UserMenu />
+          </div>
         </div>
 
         {/* Topic input */}

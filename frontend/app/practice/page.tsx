@@ -1,6 +1,8 @@
 "use client";
 import { useState } from "react";
 import Sidebar from "../Sidebar";
+import UserMenu from "../UserMenu";
+import ThemeToggle from "../ThemeToggle";
 
 async function postApi(path: string, body: any) {
   const r = await fetch(`/api${path}`, {
@@ -115,9 +117,15 @@ export default function Practice() {
     <div className="app-shell">
       <Sidebar />
       <main className="main-content">
-        <div className="page-header">
-          <h1 className="page-title">🎯 <span style={{ color: "var(--accent-3)" }}>Practice</span></h1>
-          <p className="page-subtitle">Adaptive quizzes · Performance tracking · Personalized study planner</p>
+        <div className="page-header flex justify-between items-center flex-wrap gap-4">
+          <div>
+            <h1 className="page-title">🎯 Practice & Quizzes</h1>
+            <p className="page-subtitle">Test your understanding with adaptive quizzes and personalized study plans.</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <UserMenu />
+          </div>
         </div>
 
         {/* Tab bar */}

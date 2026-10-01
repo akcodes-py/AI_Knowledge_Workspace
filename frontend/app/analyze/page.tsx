@@ -1,6 +1,8 @@
 "use client";
 import { useState } from "react";
 import Sidebar from "../Sidebar";
+import UserMenu from "../UserMenu";
+import ThemeToggle from "../ThemeToggle";
 
 async function postApi(path: string, body: any) {
   const r = await fetch(`/api${path}`, {
@@ -58,9 +60,15 @@ export default function Analyze() {
     <div className="app-shell">
       <Sidebar />
       <main className="main-content">
-        <div className="page-header">
-          <h1 className="page-title">🔬 <span style={{ color: "var(--accent-teal)" }}>Analyze</span></h1>
-          <p className="page-subtitle">Compare documents · Find contradictions · Research summaries · Knowledge graphs</p>
+        <div className="page-header flex justify-between items-center flex-wrap gap-4">
+          <div>
+            <h1 className="page-title">🔍 Analyze & Explore</h1>
+            <p className="page-subtitle">Discover connections, compare concepts, and identify potential contradictions.</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <UserMenu />
+          </div>
         </div>
 
         {/* Topic input */}
