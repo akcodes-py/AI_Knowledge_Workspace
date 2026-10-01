@@ -178,3 +178,51 @@ def token_from_cookie(request: Request):
         raise HTTPException(401, "No token")
     payload = _decode_jwt(token)
     return {"token": token, "sub": payload["sub"], "email": payload["email"]}
+
+
+class EmailLoginIn(BaseModel):
+    email: str
+    name: str | None = None
+
+
+@router.post("/login/email")
+def login_email(b: EmailLoginIn):
+    """Sign in or auto-register using email address."""
+    email = b.email.strip().lower()
+    if not email or "@" not in email:
+        raise HTTPException(400, "Valid email address required")
+    name = b.name.strip() if (b.name and b.name.strip()) else email.split("@")[0].capitalize()
+
+    with get_conn() as conn, conn.cursor() as cur:
+        cur.execute("""
+            INSERT INTO users (email, name, last_login)
+            VALUES (%s, %s, now())
+            ON CONFLICT (email) DO UPDATE SET
+              name = COALESCE(NULLIF(users.name, ''), EXCLUDED.name),
+              last_login = now()
+            RETURNING id::text, avatar_url
+        """, (email, name))
+        row = cur.fetchone()
+        user_id = row[0]
+        avatar_url = row[1] or ""
+        conn.commit()
+
+    token = _make_jwt(user_id, email)
+    response = JSONResponse({
+        "token": token,
+        "user": {
+            "id": user_id,
+            "email": email,
+            "name": name,
+            "avatar": avatar_url,
+        }
+    })
+    response.set_cookie(
+        "access_token", token,
+        max_age=JWT_EXPIRE_DAYS * 86400,
+        httponly=True,
+        samesite="lax",
+        secure=False,
+    )
+    return response
+

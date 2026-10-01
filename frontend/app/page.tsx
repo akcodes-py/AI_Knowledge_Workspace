@@ -5,8 +5,10 @@ import UserMenu from "./UserMenu";
 import ThemeToggle from "./ThemeToggle";
 import CommandPalette from "./CommandPalette";
 import OnboardingModal from "./OnboardingModal";
+import AuthModal from "./AuthModal";
 import Link from "next/link";
-import { apiFetch } from "./lib/auth";
+import { apiFetch, isLoggedIn } from "./lib/auth";
+
 
 interface DocItem {
   id: string;
@@ -45,7 +47,10 @@ export default function Home() {
   const [uploading, setUploading] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [cmdOpen, setCmdOpen] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authActionTitle, setAuthActionTitle] = useState("upload resource documents");
   const [activities, setActivities] = useState<ActivityItem[]>([]);
+
 
   const chatEndRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -87,6 +92,11 @@ export default function Home() {
   }
 
   async function handleSend(customQ?: string) {
+    if (!isLoggedIn()) {
+      setAuthActionTitle("ask AI questions and store session history");
+      setAuthModalOpen(true);
+      return;
+    }
     const q = customQ || query.trim();
     if (!q || loading) return;
 
@@ -109,12 +119,6 @@ export default function Home() {
       const data = await res.json();
       
       let answerText = data.answer || "No response received.";
-      // Trustworthy AI fallback check
-      if (!data.citations || data.citations.length === 0) {
-        if (!answerText.includes("couldn't find")) {
-          // preserve natural response
-        }
-      }
 
       setMessages((prev) => [
         ...prev,
@@ -135,6 +139,11 @@ export default function Home() {
   }
 
   async function handleFileUpload(file: File) {
+    if (!isLoggedIn()) {
+      setAuthActionTitle(`upload source file (${file.name})`);
+      setAuthModalOpen(true);
+      return;
+    }
     setUploading(true);
     setUploadMsg("Uploading → Extracting content → Indexing...");
     try {
@@ -156,6 +165,11 @@ export default function Home() {
   }
 
   async function handleIndexYT() {
+    if (!isLoggedIn()) {
+      setAuthActionTitle("index YouTube video transcripts");
+      setAuthModalOpen(true);
+      return;
+    }
     const target = ytUrl.trim();
     if (!target) return;
     setUploading(true);
@@ -178,6 +192,11 @@ export default function Home() {
   }
 
   async function handleIndexLink() {
+    if (!isLoggedIn()) {
+      setAuthActionTitle("index web links and articles");
+      setAuthModalOpen(true);
+      return;
+    }
     const target = linkUrl.trim();
     if (!target) return;
     setUploading(true);
@@ -199,6 +218,7 @@ export default function Home() {
     }
   }
 
+
   const readyDocs = docs.filter((d) => d.status === "ready");
 
   return (
@@ -206,6 +226,12 @@ export default function Home() {
       <Sidebar />
       <OnboardingModal />
       <CommandPalette isOpen={cmdOpen} onClose={() => setCmdOpen(false)} />
+      <AuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        actionTitle={authActionTitle}
+      />
+
 
       <main className="main-content">
         {/* Header */}
