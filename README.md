@@ -1,4 +1,4 @@
-# 🧠 AI Knowledge Workspace v2
+# 🧠 AI Knowledge Workspace 
 
 > **Dark-mode AI learning hub** — Upload anything, understand everything, ask anything.  
 > Powered by **Gemini 2.0 Flash**, **LangGraph RAG**, **JWT + Google OAuth**, and a premium glassmorphism UI.
