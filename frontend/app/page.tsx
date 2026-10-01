@@ -189,10 +189,6 @@ export default function Home() {
               <Link href="/chat" className="btn btn-teal" style={{ textDecoration: "none" }}>
                 💬 Open Chat
               </Link>
-              <div className="status-pill status-ok">
-                <div className="status-dot" />
-                Gemini Live
-              </div>
               <UserMenu />
             </div>
           </div>
